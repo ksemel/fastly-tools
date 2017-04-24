@@ -14,6 +14,7 @@ function task (folder, opts) {
 		vars: [],
 		verbose: false,
 		disableLogs: false,
+		enableDelete: false,
 		backends: null,
 		apiKeys: [],
 		skipConditions: []
@@ -162,12 +163,14 @@ function task (folder, opts) {
 		}
 
 		// delete old vcl
-		let oldVcl = yield fastly.getVcl(newVersion);
-		yield Promise.all(oldVcl.map(vcl => {
-			log.verbose(`Deleting "${vcl.name}" for version ${newVersion}`);
-			return fastly.deleteVcl(newVersion, vcl.name);
-		}));
-		log.info('Deleted old vcl');
+		if (options.enableDelete) {
+			let oldVcl = yield fastly.getVcl(newVersion);
+			yield Promise.all(oldVcl.map(vcl => {
+				log.verbose(`Deleting "${vcl.name}" for version ${newVersion}`);
+				return fastly.deleteVcl(newVersion, vcl.name);
+			}));
+			log.info('Deleted old vcl');
+		}
 
 		//upload new vcl
 		log.info('Uploading new VCL');
