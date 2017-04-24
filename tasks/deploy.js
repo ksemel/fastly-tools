@@ -6,7 +6,7 @@ const path = require('path');
 const loadVcl = require('../lib/loadVcl');
 const symbols = require('../lib/symbols');
 
-function task (folder, opts) {
+function task (folders, opts) {
 	let options = Object.assign({
 		main: 'main.vcl',
 		env: false,
@@ -14,21 +14,25 @@ function task (folder, opts) {
 		vars: [],
 		verbose: false,
 		disableLogs: false,
-		enableDelete: false,
+		enableDelete: true,
 		backends: null,
 		apiKeys: [],
-		skipConditions: []
+		skipConditions: [],
+		folders: [],
+		protected: []
 	}, opts);
 
 	if (options.env) {
 		require('dotenv').load();
 	}
 
+	folders = options.folders;
+
 	const log = require('../lib/logger')({verbose:options.verbose, disabled:options.disableLogs});
 
 	return co(function*() {
-		if(!folder) {
-			throw new Error('Please provide a folder where the .vcl is located');
+		if (!folders) {
+			throw new Error('Please provide a folder(s) where the .vcl is located');
 		}
 
 		if (!options.service) {
@@ -57,7 +61,7 @@ function task (folder, opts) {
 			process.env.SERVICEID = serviceId;
 		}
 
-		const vcls = loadVcl(folder, options.vars);
+		const vcls = loadVcl(folders, options.vars, log);
 
 		// get the current service and active version
 		const service = yield fastly.getServices().then(services => services.find(s => s.id === serviceId));
@@ -166,8 +170,16 @@ function task (folder, opts) {
 		if (options.enableDelete) {
 			let oldVcl = yield fastly.getVcl(newVersion);
 			yield Promise.all(oldVcl.map(vcl => {
-				log.verbose(`Deleting "${vcl.name}" for version ${newVersion}`);
-				return fastly.deleteVcl(newVersion, vcl.name);
+				if (options.protected.some(function(v) { return vcl.name.indexOf(v) >= 0; })) {
+					log.verbose(`Skipping protected file "${vcl.name}" for version ${newVersion}`);
+					return;
+				}
+				//if (options.protected.indexOf(${vcl.name}) > -1) {
+				//}
+				else {
+					log.verbose(`Deleting "${vcl.name}" for version ${newVersion}`);
+					return fastly.deleteVcl(newVersion, vcl.name);
+				}
 			}));
 			log.info('Deleted old vcl');
 		}
