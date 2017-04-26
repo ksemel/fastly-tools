@@ -130,6 +130,22 @@ function task (folders, opts) {
 				log.info('Uploaded new headers');
 			}
 
+			// Response Objects
+			if (backendData.response_objects) {
+				log.verbose('Now, delete all existing response_objects');
+				const currentResponseObjects = yield fastly.getResponseObjects(newVersion)
+				yield Promise.all(currentResponseObjects.map(h => fastly.deleteResponseObject(newVersion, h.name)));
+				log.info('Deleted old response_objects');
+
+				// Create new response_objects
+				yield Promise.all(backendData.response_objects.map(h => {
+					log.verbose(`upload response object ${h.name}`);
+					return fastly.createResponseObject(newVersion, h)
+						.then(() => log.verbose(`✓ Response object ${h.name} uploaded`));
+				}));
+				log.info('Uploaded new response_objects');
+			}
+
 			// Backends
 			if (backendData.backends) {
 				log.verbose('Now, delete all existing backends');
