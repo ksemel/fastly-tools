@@ -14,7 +14,6 @@ function task (folders, opts) {
 		vars: [],
 		verbose: false,
 		disableLogs: false,
-		enableDelete: true,
 		backends: null,
 		apiKeys: [],
 		skipConditions: [],
@@ -167,22 +166,20 @@ function task (folders, opts) {
 		}
 
 		// delete old vcl
-		if (options.enableDelete) {
-			let oldVcl = yield fastly.getVcl(newVersion);
-			yield Promise.all(oldVcl.map(vcl => {
-				if (options.protected.some(function(v) { return vcl.name.indexOf(v) >= 0; })) {
-					log.verbose(`Skipping protected file "${vcl.name}" for version ${newVersion}`);
-					return;
-				}
-				//if (options.protected.indexOf(${vcl.name}) > -1) {
-				//}
-				else {
-					log.verbose(`Deleting "${vcl.name}" for version ${newVersion}`);
-					return fastly.deleteVcl(newVersion, vcl.name);
-				}
-			}));
-			log.info('Deleted old vcl');
-		}
+		let oldVcl = yield fastly.getVcl(newVersion);
+		yield Promise.all(oldVcl.map(vcl => {
+			if (options.protected.some(function(v) { return vcl.name.indexOf(v) >= 0; })) {
+				log.verbose(`Skipping protected file "${vcl.name}" for version ${newVersion}`);
+				return;
+			}
+			//if (options.protected.indexOf(${vcl.name}) > -1) {
+			//}
+			else {
+				log.verbose(`Deleting "${vcl.name}" for version ${newVersion}`);
+				return fastly.deleteVcl(newVersion, vcl.name);
+			}
+		}));
+		log.info('Deleted old vcl');
 
 		//upload new vcl
 		log.info('Uploading new VCL');
