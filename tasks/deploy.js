@@ -162,6 +162,15 @@ function task (folders, opts) {
 				log.info('Uploaded new cache_settings');
 			}
 
+			// Settings
+			if (backendData.settings) {
+				// Update Settings
+				log.verbose(`update settings`);
+				fastly.updateSettings(newVersion, backendData.settings)
+					.then(() => log.verbose(`✓ Setting updated`));
+				log.info('Updated settings');
+			}
+
 			// Backends
 			if (backendData.backends) {
 				log.verbose('Now, delete all existing backends');
@@ -178,27 +187,32 @@ function task (folders, opts) {
 			}
 
 			const loggers = {
-				'logentries': { 'get':    fastly.getLoggingLogentries,
-						'delete': fastly.deleteLoggingLogentriesByName,
-						'create': fastly.createLoggingLogentries,
+				'logentries': {
+					'get':    fastly.getLoggingLogentries,
+					'delete': fastly.deleteLoggingLogentriesByName,
+					'create': fastly.createLoggingLogentries,
 				},
-				'ftp':        { 'get':    fastly.getLoggingFtp,
-						'delete': fastly.deleteLoggingFtpByName,
-						'create': fastly.createLoggingFtp,
+				'ftp':        {
+					'get':    fastly.getLoggingFtp,
+					'delete': fastly.deleteLoggingFtpByName,
+					'create': fastly.createLoggingFtp,
 				},
-				'syslog':     { 'get':    fastly.getLoggingSyslog,
-						'delete': fastly.deleteLoggingSyslogByName,
-						'create': fastly.createLoggingSyslog,
+				'syslog':     {
+					'get':    fastly.getLoggingSyslog,
+					'delete': fastly.deleteLoggingSyslogByName,
+					'create': fastly.createLoggingSyslog,
 				},
 			};
 
-			for(const logger in loggers) {
-				if(loggers.hasOwnProperty(logger)) {
-					log.verbose(`Now, delete all existing logging ${logger}`);
-					const currentLoggers = yield loggers[logger].get(activeVersion);
-					yield Promise.all(currentLoggers.map(l => loggers[logger].delete(newVersion, l.name)));
-					log.verbose(`Deleted old logging ${logger}`);
+			for (const logger in loggers) {
+				if (loggers.hasOwnProperty(logger)) {
 					if (backendData.logging && backendData.logging[logger]) {
+						log.verbose(`Now, delete all existing logging ${logger}`);
+						const currentLoggers = yield loggers[logger].get(activeVersion);
+						yield Promise.all(currentLoggers.map(l => loggers[logger].delete(newVersion, l.name)));
+						log.verbose(`Deleted old logging ${logger}`);
+
+						// Create new loggers
 						yield Promise.all(backendData.logging[logger].map(l => {
 							log.verbose(`upload logging ${logger} ${l.name}`);
 							return loggers[logger].create(newVersion, l)
