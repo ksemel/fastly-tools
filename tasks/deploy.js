@@ -78,12 +78,15 @@ function task (folders, opts) {
 			log.verbose(`Backends option specified.  Loading backends from ${options.backends}`);
 			const backendData = require(path.join(process.cwd(), options.backends));
 
-			log.verbose('Now, delete all existing healthchecks');
-			const currentHealthchecks = yield fastly.getHealthcheck(newVersion);
-			yield Promise.all(currentHealthchecks.map(h => fastly.deleteHealthcheck(newVersion, h.name)));
-			log.info('Deleted old healthchecks');
+			// Healthchecks
 			if (backendData.healthchecks) {
-				log.verbose(`About to upload ${backendData.healthchecks.length} healthchecks`);
+				log.verbose('Now, delete all existing healthchecks');
+				const currentHealthchecks = yield fastly.getHealthcheck(newVersion);
+				yield Promise.all(currentHealthchecks.map(h => fastly.deleteHealthcheck(newVersion, h.name)));
+				log.info('Deleted old healthchecks');
+
+				// Create new healthchecks
+				//log.verbose(`About to upload ${backendData.healthchecks.length} healthchecks`);
 				yield Promise.all(backendData.healthchecks.map(h => {
 					log.verbose(`upload healthcheck ${h.name}`);
 					return fastly.createHealthcheck(newVersion, h).then(() => log.verbose(`✓ Healthcheck ${h.name} uploaded`));
@@ -91,15 +94,19 @@ function task (folders, opts) {
 				log.info('Uploaded new healthchecks');
 			}
 
-			log.verbose('Now, delete all existing conditions');
-			const currentConditions = yield fastly.getConditions(newVersion)
-			yield Promise.all(
-				currentConditions
-					.filter(c => options.skipConditions.indexOf(c.name) === -1)
-					.map(h => fastly.deleteCondition(newVersion, h.name))
-			);
-			log.info('Deleted old conditions');
+			// Conditions
 			if (backendData.conditions) {
+				log.verbose('Now, delete all existing conditions');
+				const currentConditions = yield fastly.getConditions(newVersion)
+				yield Promise.all(
+					currentConditions
+						.filter(c => options.skipConditions.indexOf(c.name) === -1)
+						.map(h => fastly.deleteCondition(newVersion, h.name))
+				);
+				log.info('Deleted old conditions');
+
+				// Create new conditions
+				//log.verbose(`About to upload ${backendData.conditions.length} conditions`);
 				yield Promise.all(backendData.conditions.map(c => {
 					log.verbose(`upload condition ${c.name}`);
 					return fastly.createCondition(newVersion, c).then(() => log.verbose(`✓ Condition ${c.name} uploaded`));
@@ -107,11 +114,14 @@ function task (folders, opts) {
 				log.info('Uploaded new conditions');
 			}
 
+			// Headers
 			if (backendData.headers) {
 				log.verbose('Now, delete all existing headers');
 				const currentHeaders = yield fastly.getHeaders(newVersion)
 				yield Promise.all(currentHeaders.map(h => fastly.deleteHeader(newVersion, h.name)));
 				log.info('Deleted old headers');
+
+				// Create new headers
 				yield Promise.all(backendData.headers.map(h => {
 					log.verbose(`upload header ${h.name}`);
 					return fastly.createHeader(newVersion, h)
@@ -120,15 +130,20 @@ function task (folders, opts) {
 				log.info('Uploaded new headers');
 			}
 
-			log.verbose('Now, delete all existing backends');
-			const currentBackends = yield fastly.getBackend(newVersion);
-			yield Promise.all(currentBackends.map(b => fastly.deleteBackendByName(newVersion, b.name)));
-			log.info('Deleted old backends');
-			yield Promise.all(backendData.backends.map(b => {
-				log.verbose(`upload backend ${b.name}`);
-				return fastly.createBackend(newVersion, b).then(() => log.verbose(`✓ Backend ${b.name} uploaded`));
-			}));
-			log.info('Uploaded new backends');
+			// Backends
+			if (backendData.backends) {
+				log.verbose('Now, delete all existing backends');
+				const currentBackends = yield fastly.getBackend(newVersion);
+				yield Promise.all(currentBackends.map(b => fastly.deleteBackendByName(newVersion, b.name)));
+				log.info('Deleted old backends');
+
+				// Create new backends
+				yield Promise.all(backendData.backends.map(b => {
+					log.verbose(`upload backend ${b.name}`);
+					return fastly.createBackend(newVersion, b).then(() => log.verbose(`✓ Backend ${b.name} uploaded`));
+				}));
+				log.info('Uploaded new backends');
+			}
 
 			const loggers = {
 				'logentries': { 'get':    fastly.getLoggingLogentries,
