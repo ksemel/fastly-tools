@@ -146,6 +146,22 @@ function task (folders, opts) {
 				log.info('Uploaded new response_objects');
 			}
 
+			// Cache Settings
+			if (backendData.cache_settings) {
+				log.verbose('Now, delete all existing cache_settings');
+				const currentCacheSettings = yield fastly.getCacheSettings(newVersion)
+				yield Promise.all(currentCacheSettings.map(h => fastly.deleteCacheSettings(newVersion, h.name)));
+				log.info('Deleted old cache_settings');
+
+				// Create new cache_settings
+				yield Promise.all(backendData.cache_settings.map(h => {
+					log.verbose(`upload cache settings ${h.name}`);
+					return fastly.createCacheSettings(newVersion, h)
+						.then(() => log.verbose(`✓ Cache setting ${h.name} uploaded`));
+				}));
+				log.info('Uploaded new cache_settings');
+			}
+
 			// Backends
 			if (backendData.backends) {
 				log.verbose('Now, delete all existing backends');
