@@ -202,18 +202,29 @@ function task (folders, opts) {
 					'delete': fastly.deleteLoggingSyslogByName,
 					'create': fastly.createLoggingSyslog,
 				},
+				'sumologics':     {
+					'get':    fastly.getLoggingSumologics,
+					'delete': fastly.deleteLoggingSumologicsByName,
+					'create': fastly.createLoggingSumologics,
+				},
+				's3s':     {
+					'get':    fastly.getLoggingS3,
+					'delete': fastly.deleteLoggingS3ByName,
+					'create': fastly.createLoggingS3,
+				}
 			};
 
 			for (const logger in loggers) {
 				if (loggers.hasOwnProperty(logger)) {
-					if (backendData.logging && backendData.logging[logger]) {
+					if (backendData.logger) {
 						log.verbose(`Now, delete all existing logging ${logger}`);
 						const currentLoggers = yield loggers[logger].get(activeVersion);
+
 						yield Promise.all(currentLoggers.map(l => loggers[logger].delete(newVersion, l.name)));
 						log.verbose(`Deleted old logging ${logger}`);
 
 						// Create new loggers
-						yield Promise.all(backendData.logging[logger].map(l => {
+						yield Promise.all(backendData.logger.map(l => {
 							log.verbose(`upload logging ${logger} ${l.name}`);
 							return loggers[logger].create(newVersion, l)
 								.then(() =>
@@ -232,10 +243,7 @@ function task (folders, opts) {
 			if (options.protected.some(function(v) { return vcl.name.indexOf(v) >= 0; })) {
 				log.verbose(`Skipping protected file "${vcl.name}" for version ${newVersion}`);
 				return;
-			}
-			//if (options.protected.indexOf(${vcl.name}) > -1) {
-			//}
-			else {
+			} else {
 				log.verbose(`Deleting "${vcl.name}" for version ${newVersion}`);
 				return fastly.deleteVcl(newVersion, vcl.name);
 			}
