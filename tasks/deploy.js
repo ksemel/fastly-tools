@@ -197,15 +197,15 @@ function task (folders, opts) {
 					'delete': fastly.deleteLoggingFtpByName,
 					'create': fastly.createLoggingFtp,
 				},
-				'syslog':     {
+				'syslogs':     {
 					'get':    fastly.getLoggingSyslog,
 					'delete': fastly.deleteLoggingSyslogByName,
 					'create': fastly.createLoggingSyslog,
 				},
 				'sumologics':     {
-					'get':    fastly.getLoggingSumologics,
-					'delete': fastly.deleteLoggingSumologicsByName,
-					'create': fastly.createLoggingSumologics,
+					'get':    fastly.getLoggingSumologic,
+					'delete': fastly.deleteLoggingSumologicByName,
+					'create': fastly.createLoggingSumologic,
 				},
 				's3s':     {
 					'get':    fastly.getLoggingS3,
@@ -216,7 +216,7 @@ function task (folders, opts) {
 
 			for (const logger in loggers) {
 				if (loggers.hasOwnProperty(logger)) {
-					if (backendData.logger) {
+					if (backendData[logger]) {
 						log.verbose(`Now, delete all existing logging ${logger}`);
 						const currentLoggers = yield loggers[logger].get(activeVersion);
 
@@ -224,7 +224,7 @@ function task (folders, opts) {
 						log.verbose(`Deleted old logging ${logger}`);
 
 						// Create new loggers
-						yield Promise.all(backendData.logger.map(l => {
+						yield Promise.all(backendData[logger].map(l => {
 							log.verbose(`upload logging ${logger} ${l.name}`);
 							return loggers[logger].create(newVersion, l)
 								.then(() =>
