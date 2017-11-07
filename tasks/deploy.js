@@ -96,20 +96,29 @@ function task (folders, opts) {
 
 			// Conditions
 			if (backendData.conditions) {
-				log.verbose('Now, delete all existing conditions');
-				const currentConditions = yield fastly.getConditions(newVersion)
-				yield Promise.all(
-					currentConditions
-						.filter(c => options.skipConditions.indexOf(c.name) === -1)
-						.map(h => fastly.deleteCondition(newVersion, h.name))
-				);
+				// delete old conditions
+				let oldConditions = yield fastly.getConditions(newVersion);
+				yield Promise.all(oldConditions.map(condition => {
+					if (options.skipConditions.some(function(c) { return condition.name.indexOf(c) >= 0; })) {
+						log.verbose(`  Skipping protected condition "${condition.name}" for version ${newVersion}`);
+						return;
+					} else {
+						log.verbose(`  Deleting "${condition.name}" for version ${newVersion}`);
+						return fastly.deleteCondition(newVersion, condition.name);
+					}
+				}));
 				log.info('Deleted old conditions');
 
-				// Create new conditions
-				//log.verbose(`About to upload ${backendData.conditions.length} conditions`);
-				yield Promise.all(backendData.conditions.map(c => {
-					log.verbose(`upload condition ${c.name}`);
-					return fastly.createCondition(newVersion, c).then(() => log.verbose(`✓ Condition ${c.name} uploaded`));
+				//upload new conditions
+				yield Promise.all(backendData.conditions.map(condition => {
+					if (options.skipConditions.some(function(c) { return condition.name.indexOf(c) >= 0; })) {
+						log.verbose(`  Skipping protected condition "${condition.name}" for version ${newVersion}`);
+						return;
+					} else {
+						log.verbose(`Uploading "${condition.name}" for version ${newVersion}`);
+						return fastly.createCondition(newVersion, condition)
+							.then(() => log.verbose(`✓ Condition ${condition.name} uploaded`));
+					}
 				}));
 				log.info('Uploaded new conditions');
 			}
