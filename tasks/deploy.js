@@ -17,6 +17,7 @@ function task (folders, opts) {
 		backends: null,
 		apiKeys: [],
 		skipConditions: [],
+		skipResponses: [],
 		folders: [],
 		protected: []
 	}, opts);
@@ -141,18 +142,31 @@ function task (folders, opts) {
 
 			// Response Objects
 			if (backendData.response_objects) {
-				log.verbose('Now, delete all existing response_objects');
-				const currentResponseObjects = yield fastly.getResponseObjects(newVersion)
-				yield Promise.all(currentResponseObjects.map(h => fastly.deleteResponseObject(newVersion, h.name)));
-				log.info('Deleted old response_objects');
-
-				// Create new response_objects
-				yield Promise.all(backendData.response_objects.map(h => {
-					log.verbose(`upload response object ${h.name}`);
-					return fastly.createResponseObject(newVersion, h)
-						.then(() => log.verbose(`✓ Response object ${h.name} uploaded`));
+				// delete old conditions
+				let oldResponses = yield fastly.getResponseObjects(newVersion);
+				yield Promise.all(oldResponses.map(response => {
+					if (options.skipResponses.some(function(r) { return response.name.indexOf(r) >= 0; })) {
+						log.verbose(`  Skipping protected response object "${response.name}" for version ${newVersion}`);
+						return;
+					} else {
+						log.verbose(`  Deleting "${response.name}" for version ${newVersion}`);
+						return fastly.deleteResponseObject(newVersion, response.name);
+					}
 				}));
-				log.info('Uploaded new response_objects');
+				log.info('Deleted old response objects');
+
+				//upload new conditions
+				yield Promise.all(backendData.response_objects.map(response => {
+					if (options.skipResponses.some(function(r) { return response.name.indexOf(r) >= 0; })) {
+						log.verbose(`  Skipping protected response object "${response.name}" for version ${newVersion}`);
+						return;
+					} else {
+						log.verbose(`Uploading "${response.name}" for version ${newVersion}`);
+						return fastly.createResponseObject(newVersion, response)
+							.then(() => log.verbose(`✓ Response object ${response.name} uploaded`));
+					}
+				}));
+				log.info('Uploaded new response objects');
 			}
 
 			// Cache Settings

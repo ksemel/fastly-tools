@@ -17,6 +17,7 @@ program
 	.option('-b --backends <backends>', 'Upload the backend options specified in <backends> via the api')
 	.option('-k --api-keys <keys>', 'list of alternate api keys to try should the key stored in process.env.FASTLY_API_KEY hit its rate limit', list)
 	.option('--skip-conditions <conditions>', 'list of conditions to skip deleting', list)
+	.option('--skip-responses <responses>', 'list of responses to skip deleting', list)
 	.option('--folders <folders>', 'list of folders to upload VCLs from', list)
 	.option('--protected <strings>', 'Skip all VCLs with these strings in their names', list)
 	.action(function(folder, options) {
