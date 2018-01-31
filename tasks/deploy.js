@@ -18,6 +18,7 @@ function task (folders, opts) {
 		apiKeys: [],
 		skipConditions: [],
 		skipResponses: [],
+		skipDomains: [],
 		folders: [],
 		protected: []
 	}, opts);
@@ -78,6 +79,35 @@ function task (folders, opts) {
 		if(options.backends){
 			log.verbose(`Backends option specified.  Loading backends from ${options.backends}`);
 			const backendData = require(path.join(process.cwd(), options.backends));
+
+			// Domains
+			if (backendData.domains) {
+				// delete old domains
+				let currentDomains = yield fastly.getDomains(newVersion);
+				yield Promise.all(currentDomains.map(domain => {
+					if (options.skipDomains.some(function(c) { return domain.name.indexOf(c) >= 0; })) {
+						log.verbose(`  Skipping protected domain "${domain.name}" for version ${newVersion}`);
+						return;
+					} else {
+						log.verbose(`  Deleting "${domain.name}" for version ${newVersion}`);
+						return fastly.deleteDomain(newVersion, domain.name);
+					}
+				}));
+				log.info('Deleted old domains');
+
+				//upload new domains
+				yield Promise.all(backendData.domains.map(domain => {
+					if (options.skipDomains.some(function(c) { return domain.name.indexOf(c) >= 0; })) {
+						log.verbose(`  Skipping protected domain "${domain.name}" for version ${newVersion}`);
+						return;
+					} else {
+						log.verbose(`Uploading "${domain.name}" for version ${newVersion}`);
+						return fastly.createDomain(newVersion, domain)
+							.then(() => log.verbose(`✓ Domain ${domain.name} uploaded`));
+					}
+				}));
+				log.info('Uploaded new domains');
+			}
 
 			// Healthchecks
 			if (backendData.healthchecks) {
