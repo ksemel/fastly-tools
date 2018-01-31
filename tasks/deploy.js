@@ -334,14 +334,10 @@ function task (folders, opts) {
 			log.info(`Version ${newVersion} looks ok`);
 
 			let activate = options.autoactivate;
-			let message = 'Version ' + newVersion + ' has been deployed but was not activated.';
-
-			//console.warn( service );
-			//SLACK_MSG="Deployed VCL updates for $NAME\nVersion <$FASTLY_LINK/versions/$OLD_VERSION|$OLD_VERSION> to Version <$FASTLY_LINK/versions/$NEW_VERSION|$NEW_VERSION>\n<$FASTLY_LINK/diff/$OLD_VERSION,$NEW_VERSION|See Diff>"
 
 			if ( ! options.autoactivate ) {
 				// Prompt the user to activate or wait
-				let message = 'Success!';
+				let message = 'Version ' + newVersion + ' has been deployed but was not activated.';
 				const schema = {
 					properties: {
 						activatenow: {
@@ -368,7 +364,7 @@ function task (folders, opts) {
 				});
 			} else {
 				// Auto activating without prompt
-				message = 'Version ' + newVersion + ' has been deployed and activated.';
+				let message = 'Version ' + newVersion + ' has been deployed and activated.';
 
 				if ( activate ) {
 					let activationResponse = co.wrap(function* (val) {
