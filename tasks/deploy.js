@@ -2,6 +2,7 @@
 const co = require('co');
 require('array.prototype.includes');
 const path = require('path');
+const prompt = require('prompt');
 
 const loadVcl = require('../lib/loadVcl');
 const symbols = require('../lib/symbols');
@@ -13,6 +14,7 @@ function task (folders, opts) {
 		service: null,
 		vars: [],
 		verbose: false,
+		autoactivate: false,
 		disableLogs: false,
 		backends: null,
 		apiKeys: [],
@@ -321,18 +323,59 @@ function task (folders, opts) {
 		// validate
 		log.verbose(`Validate version ${newVersion}`);
 		let validationResponse = yield fastly.validateVersion(newVersion)
-		if (validationResponse.status === 'ok') {
-			log.info(`Version ${newVersion} looks ok`);
-			yield fastly.activateVersion(newVersion);
-		} else {
+
+		if (validationResponse.status !== 'ok') {
 			let error = new Error('VCL Validation Error');
 			error.type = symbols.VCL_VALIDATION_ERROR;
 			error.validation = validationResponse.msg;
 			throw error;
-		}
 
-		log.success('Your VCL has been deployed.');
-		log.art('superman', 'success');
+		} else {
+			log.info(`Version ${newVersion} looks ok`);
+
+			let activate = options.autoactivate;
+
+			if ( ! options.autoactivate ) {
+				// Prompt the user to activate or wait
+				let message = 'Version ' + newVersion + ' has been deployed but was not activated.';
+				const schema = {
+					properties: {
+						activatenow: {
+							message: 'Would you like to activate version ' + newVersion + ' now?',
+							default: 'Y'
+						}
+					}
+				};
+				prompt.start();
+				prompt.get(schema, function (err, result) {
+					if ( result.activatenow == 'Y' || result.activatenow == 'y' ) {
+						activate = true;
+						message = 'Version ' + newVersion + ' has been deployed and activated.';
+					}
+
+					if ( activate ) {
+						let activationResponse = co.wrap(function* (val) {
+						  return yield fastly.activateVersion(newVersion);
+						});
+					}
+
+					log.success(message);
+					log.art('superman', 'success');
+				});
+			} else {
+				// Auto activating without prompt
+				let message = 'Version ' + newVersion + ' has been deployed and activated.';
+
+				if ( activate ) {
+					let activationResponse = co.wrap(function* (val) {
+					  return yield fastly.activateVersion(newVersion);
+					});
+				}
+
+				log.success(message);
+				log.art('superman', 'success');
+			}
+		}
 
 	});
 }
