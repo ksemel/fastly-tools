@@ -323,15 +323,20 @@ function task (folders, opts) {
 		// validate
 		log.verbose(`Validate version ${newVersion}`);
 		let validationResponse = yield fastly.validateVersion(newVersion)
-		let message = '';
 
-		if (validationResponse.status === 'ok') {
+		if (validationResponse.status !== 'ok') {
+			let error = new Error('VCL Validation Error');
+			error.type = symbols.VCL_VALIDATION_ERROR;
+			error.validation = validationResponse.msg;
+			throw error;
+
+		} else {
 			log.info(`Version ${newVersion} looks ok`);
 
 			let activate = options.autoactivate;
-			message = 'Version ' + newVersion + ' has been deployed but was not activated.';
+			let message = 'Version ' + newVersion + ' has been deployed but was not activated.';
 
-			console.warn( service );
+			//console.warn( service );
 			//SLACK_MSG="Deployed VCL updates for $NAME\nVersion <$FASTLY_LINK/versions/$OLD_VERSION|$OLD_VERSION> to Version <$FASTLY_LINK/versions/$NEW_VERSION|$NEW_VERSION>\n<$FASTLY_LINK/diff/$OLD_VERSION,$NEW_VERSION|See Diff>"
 
 			if ( ! options.autoactivate ) {
@@ -351,23 +356,26 @@ function task (folders, opts) {
 						activate = true;
 						message = 'Version ' + newVersion + ' has been deployed and activated.';
 					}
+
+					if ( activate ) {
+						yield fastly.activateVersion(newVersion);
+					}
+
+					log.success(message);
+					log.art('superman', 'success');
 				});
 			} else {
 				// Auto activating without prompt
 				message = 'Version ' + newVersion + ' has been deployed and activated.';
-			}
-			if ( activate ) {
-				yield fastly.activateVersion(newVersion);
-			}
-		} else {
-			let error = new Error('VCL Validation Error');
-			error.type = symbols.VCL_VALIDATION_ERROR;
-			error.validation = validationResponse.msg;
-			throw error;
-		}
 
-		log.success(message);
-		log.art('superman', 'success');
+				if ( activate ) {
+					yield fastly.activateVersion(newVersion);
+				}
+
+				log.success(message);
+				log.art('superman', 'success');
+			}
+		}
 
 	});
 }
