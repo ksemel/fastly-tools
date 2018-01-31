@@ -358,7 +358,7 @@ function task (folders, opts) {
 					}
 
 					if ( activate ) {
-						yield fastly.activateVersion(newVersion);
+						let activationResponse = yield fastly.activateVersion(newVersion);
 					}
 
 					log.success(message);
@@ -369,7 +369,7 @@ function task (folders, opts) {
 				message = 'Version ' + newVersion + ' has been deployed and activated.';
 
 				if ( activate ) {
-					yield fastly.activateVersion(newVersion);
+					let activationResponse = yield fastly.activateVersion(newVersion);
 				}
 
 				log.success(message);
