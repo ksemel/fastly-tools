@@ -18,6 +18,7 @@ function task (folders, opts) {
 		apiKeys: [],
 		skipConditions: [],
 		skipResponses: [],
+		skipDomains: [],
 		folders: [],
 		protected: []
 	}, opts);
