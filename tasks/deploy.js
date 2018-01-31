@@ -328,6 +328,9 @@ function task (folders, opts) {
 			log.info(`Version ${newVersion} looks ok`);
 
 			let activate = options.autoactivate;
+			let message = 'Version ' + newVersion + ' has been deployed but was not activated.';
+			console.warn( service );
+			//SLACK_MSG="Deployed VCL updates for $NAME\nVersion <$FASTLY_LINK/versions/$OLD_VERSION|$OLD_VERSION> to Version <$FASTLY_LINK/versions/$NEW_VERSION|$NEW_VERSION>\n<$FASTLY_LINK/diff/$OLD_VERSION,$NEW_VERSION|See Diff>"
 
 			if ( ! options.autoactivate ) {
 				// Prompt the user to activate or wait
@@ -345,12 +348,7 @@ function task (folders, opts) {
 					if ( result.activatenow == 'Y' || result.activatenow == 'y' ) {
 						activate = true;
 						message = 'Version ' + newVersion + ' has been deployed and activated.';
-					} else {
-						message = 'Version ' + newVersion + ' has been deployed but was not activated.';
 					}
-
-					console.warn( service );
-					//SLACK_MSG="Deployed VCL updates for $NAME\nVersion <$FASTLY_LINK/versions/$OLD_VERSION|$OLD_VERSION> to Version <$FASTLY_LINK/versions/$NEW_VERSION|$NEW_VERSION>\n<$FASTLY_LINK/diff/$OLD_VERSION,$NEW_VERSION|See Diff>"
 				});
 			} else {
 				// Auto activating without prompt
