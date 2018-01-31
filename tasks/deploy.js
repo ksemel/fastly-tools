@@ -323,12 +323,14 @@ function task (folders, opts) {
 		// validate
 		log.verbose(`Validate version ${newVersion}`);
 		let validationResponse = yield fastly.validateVersion(newVersion)
+		let message = '';
 
 		if (validationResponse.status === 'ok') {
 			log.info(`Version ${newVersion} looks ok`);
 
 			let activate = options.autoactivate;
-			let message = 'Version ' + newVersion + ' has been deployed but was not activated.';
+			message = 'Version ' + newVersion + ' has been deployed but was not activated.';
+
 			console.warn( service );
 			//SLACK_MSG="Deployed VCL updates for $NAME\nVersion <$FASTLY_LINK/versions/$OLD_VERSION|$OLD_VERSION> to Version <$FASTLY_LINK/versions/$NEW_VERSION|$NEW_VERSION>\n<$FASTLY_LINK/diff/$OLD_VERSION,$NEW_VERSION|See Diff>"
 
