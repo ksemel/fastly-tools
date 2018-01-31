@@ -345,7 +345,7 @@ function task (folders, opts) {
 				const schema = {
 					properties: {
 						activatenow: {
-							message: 'Would you like to activate version ' + newVersion + ' now? [Y]',
+							message: 'Would you like to activate version ' + newVersion + ' now?',
 							default: 'Y'
 						}
 					}
