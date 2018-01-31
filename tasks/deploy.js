@@ -326,6 +326,9 @@ function task (folders, opts) {
 
 		if (validationResponse.status === 'ok') {
 			log.info(`Version ${newVersion} looks ok`);
+
+			let activate = options.autoactivate;
+
 			if ( ! options.autoactivate ) {
 				// Prompt the user to activate or wait
 				let message = 'Success!';
@@ -340,20 +343,21 @@ function task (folders, opts) {
 				prompt.start();
 				prompt.get(schema, function (err, result) {
 					if ( result.activatenow == 'Y' || result.activatenow == 'y' ) {
-						yield fastly.activateVersion(newVersion);
+						activate = true;
 						message = 'Version ' + newVersion + ' has been deployed and activated.';
 					} else {
 						message = 'Version ' + newVersion + ' has been deployed but was not activated.';
 					}
 
-					log.success( service );
+					console.warn( service );
 					//SLACK_MSG="Deployed VCL updates for $NAME\nVersion <$FASTLY_LINK/versions/$OLD_VERSION|$OLD_VERSION> to Version <$FASTLY_LINK/versions/$NEW_VERSION|$NEW_VERSION>\n<$FASTLY_LINK/diff/$OLD_VERSION,$NEW_VERSION|See Diff>"
 				});
 			} else {
 				// Auto activating without prompt
-				yield fastly.activateVersion(newVersion);
-
 				message = 'Version ' + newVersion + ' has been deployed and activated.';
+			}
+			if ( activate ) {
+				yield fastly.activateVersion(newVersion);
 			}
 		} else {
 			let error = new Error('VCL Validation Error');
