@@ -93,10 +93,10 @@ function task (folders, opts) {
 						return fastly.deleteDomain(newVersion, domain.name);
 					}
 				}));
-				log.info('Deleted old conditions');
+				log.info('Deleted old domains');
 
-				//upload new conditions
-				yield Promise.all(backendData.conditions.map(domain => {
+				//upload new domains
+				yield Promise.all(backendData.domains.map(domain => {
 					if (options.skipDomains.some(function(c) { return domain.name.indexOf(c) >= 0; })) {
 						log.verbose(`  Skipping protected domain "${domain.name}" for version ${newVersion}`);
 						return;
@@ -106,7 +106,7 @@ function task (folders, opts) {
 							.then(() => log.verbose(`✓ Domain ${domain.name} uploaded`));
 					}
 				}));
-				log.info('Uploaded new conditions');
+				log.info('Uploaded new domains');
 			}
 
 			// Healthchecks
