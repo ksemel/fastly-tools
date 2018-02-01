@@ -1,8 +1,6 @@
 'use strict';
-
-require('array.prototype.includes');
-
 const co = require('co');
+require('array.prototype.includes');
 const path = require('path');
 const prompt = require('prompt');
 
@@ -339,40 +337,43 @@ function task (folders, opts) {
 
 			if ( ! options.autoactivate ) {
 				// Prompt the user to activate or wait
-				let message = 'Version ' + newVersion + ' has been deployed but was not activated.';
-				const schema = {
-					properties: {
-						activatenow: {
-							message: 'Would you like to activate version ' + newVersion + ' now?',
-							default: 'Y'
-						}
+				co(function *(){
+					yield Promise.resolve(
+						const schema = {
+							properties: {
+								activatenow: {
+									message: 'Would you like to activate version ' + newVersion + ' now?',
+									default: 'Y'
+								}
+							}
+						};
+						prompt.start();
+						prompt.get(schema, function (err, result) {
+							if ( result.activatenow == 'Y' || result.activatenow == 'y' ) {
+								activate = true;
+							}
+							return activate;
+						});
+					);
+				}).then(function(activate) {
+					if ( activate ) {
+						yield fastly.activateVersion(newVersion);
 					}
-				};
-				prompt.start();
-				prompt.get(schema, function (err, result) {
-					if ( result.activatenow == 'Y' || result.activatenow == 'y' ) {
-						activate = true;
-						message = 'Version ' + newVersion + ' has been deployed and activated.';
+					return activate;
+				}).then(function(activate) {
+					if ( activate ) {
+						log.success('Version ' + newVersion + ' has been deployed and activated.');
+					} else {
+						log.success('Version ' + newVersion + ' has been deployed but was not activated.');
 					}
-
-				  	if ( activate ) {
-					  	log.info('Activating....');
-					  	fastly.activateVersion(newVersion);
-					}
-
-					log.success(message);
 					log.art('superman', 'success');
 				});
+
 			} else {
 				// Auto activating without prompt
-				let message = 'Version ' + newVersion + ' has been deployed and activated.';
+				yield fastly.activateVersion(newVersion);
 
-				if ( activate ) {
-				  	log.info('Activating....');
-				  	fastly.activateVersion(newVersion);
-				}
-
-				log.success(message);
+				log.success('Version ' + newVersion + ' has been deployed and activated.');
 				log.art('superman', 'success');
 			}
 		}
