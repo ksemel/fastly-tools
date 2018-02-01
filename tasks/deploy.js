@@ -2,7 +2,7 @@
 const co = require('co');
 require('array.prototype.includes');
 const path = require('path');
-const prompt = require('prompt');
+const prompt = require('prompt-promise');
 
 const loadVcl = require('../lib/loadVcl');
 const symbols = require('../lib/symbols');
@@ -336,46 +336,38 @@ function task (folders, opts) {
 			let activate = options.autoactivate;
 
 			if ( ! options.autoactivate ) {
-				// Prompt the user to activate or wait
-				co(function *(){
-					yield Promise.resolve(
-						const schema = {
-							properties: {
-								activatenow: {
-									message: 'Would you like to activate version ' + newVersion + ' now?',
-									default: 'Y'
-								}
-							}
-						};
-						prompt.start();
-						prompt.get(schema, function (err, result) {
-							if ( result.activatenow == 'Y' || result.activatenow == 'y' ) {
-								activate = true;
-							}
-							return activate;
-						});
-					);
-				}).then(function(activate) {
-					if ( activate ) {
-						yield fastly.activateVersion(newVersion);
-					}
-					return activate;
-				}).then(function(activate) {
-					if ( activate ) {
-						log.success('Version ' + newVersion + ' has been deployed and activated.');
-					} else {
-						log.success('Version ' + newVersion + ' has been deployed but was not activated.');
-					}
+				var activateNow = co.wrap(function * () {
+					log.info('Activating version ' + newVersion + ' now');
+				  	yield fastly.activateVersion(newVersion);
+
+				  	log.success('Version ' + newVersion + ' has been deployed and activated.');
 					log.art('superman', 'success');
+
+				  	return;
+				})
+
+				var dontActivateNow = co.wrap(function * () {
+					log.success('Version ' + newVersion + ' has been deployed but was not activated.');
+					return;
+				})
+
+				// Prompt the user to activate or wait
+				co(function * () {
+					const activatePrompt = yield prompt('Would you like to activate version ' + newVersion + ' now? (Y) ');
+
+				  	return ( activatePrompt == 'Y' || activatePrompt == 'y' ) ? activateNow() : dontActivateNow();
 				});
 
 			} else {
 				// Auto activating without prompt
+				log.info('Activating version ' + newVersion + ' now');
 				yield fastly.activateVersion(newVersion);
 
 				log.success('Version ' + newVersion + ' has been deployed and activated.');
 				log.art('superman', 'success');
 			}
+
+			return;
 		}
 
 	});
