@@ -1,6 +1,8 @@
 'use strict';
-const co = require('co');
+
 require('array.prototype.includes');
+
+const co = require('co');
 const path = require('path');
 const prompt = require('prompt');
 
@@ -353,13 +355,10 @@ function task (folders, opts) {
 						message = 'Version ' + newVersion + ' has been deployed and activated.';
 					}
 
-
-					let activationResponse = co.wrap(function* (val) {
-					  if ( activate ) {
+				  	if ( activate ) {
 					  	log.info('Activating....');
-					  	return yield fastly.activateVersion(newVersion);
-						}
-					});
+					  	fastly.activateVersion(newVersion);
+					}
 
 					log.success(message);
 					log.art('superman', 'success');
@@ -368,12 +367,10 @@ function task (folders, opts) {
 				// Auto activating without prompt
 				let message = 'Version ' + newVersion + ' has been deployed and activated.';
 
-				let activationResponse = co.wrap(function* (val) {
-				  if ( activate ) {
+				if ( activate ) {
 				  	log.info('Activating....');
-				  	return yield fastly.activateVersion(newVersion);
-					}
-				});
+				  	fastly.activateVersion(newVersion);
+				}
 
 				log.success(message);
 				log.art('superman', 'success');
