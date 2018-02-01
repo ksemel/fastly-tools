@@ -333,30 +333,23 @@ function task (folders, opts) {
 		} else {
 			log.info(`Version ${newVersion} looks ok`);
 
-			let activate = options.autoactivate;
-
 			if ( ! options.autoactivate ) {
 				var activateNow = co.wrap(function * () {
 					log.info('Activating version ' + newVersion + ' now');
 				  	yield fastly.activateVersion(newVersion);
-
-				  	log.success('Version ' + newVersion + ' has been deployed and activated.');
-					log.art('superman', 'success');
-
-				  	return;
-				})
-
-				var dontActivateNow = co.wrap(function * () {
-					log.success('Version ' + newVersion + ' has been deployed but was not activated.');
-					return;
 				})
 
 				// Prompt the user to activate or wait
-				co(function * () {
-					const activatePrompt = yield prompt('Would you like to activate version ' + newVersion + ' now? (Y) ');
+				const activatePrompt = yield prompt('Would you like to activate version ' + newVersion + ' now? (Y) ');
 
-				  	return ( activatePrompt == 'Y' || activatePrompt == 'y' ) ? activateNow() : dontActivateNow();
-				});
+			  	if ( activatePrompt == 'Y' || activatePrompt == 'y' ) {
+		  			activateNow().then(function(){
+						log.success('Version ' + newVersion + ' has been deployed and activated.');
+						log.art('superman', 'success');
+		  			});
+		  		} else {
+		  			log.success('Version ' + newVersion + ' has been deployed but was not activated.');
+		  		}
 
 			} else {
 				// Auto activating without prompt
@@ -366,8 +359,6 @@ function task (folders, opts) {
 				log.success('Version ' + newVersion + ' has been deployed and activated.');
 				log.art('superman', 'success');
 			}
-
-			return;
 		}
 
 	});
