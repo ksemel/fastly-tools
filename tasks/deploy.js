@@ -355,6 +355,7 @@ function task (folders, opts) {
 
 					if ( activate ) {
 						let activationResponse = co.wrap(function* (val) {
+						  log.info('Activating....');
 						  return yield fastly.activateVersion(newVersion);
 						});
 					}
@@ -368,6 +369,7 @@ function task (folders, opts) {
 
 				if ( activate ) {
 					let activationResponse = co.wrap(function* (val) {
+					  log.info('Activating....');
 					  return yield fastly.activateVersion(newVersion);
 					});
 				}
