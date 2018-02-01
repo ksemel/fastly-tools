@@ -353,12 +353,13 @@ function task (folders, opts) {
 						message = 'Version ' + newVersion + ' has been deployed and activated.';
 					}
 
-					if ( activate ) {
-						let activationResponse = co.wrap(function* (val) {
-						  log.info('Activating....');
-						  return yield fastly.activateVersion(newVersion);
-						});
-					}
+
+					let activationResponse = co.wrap(function* (val) {
+					  if ( activate ) {
+					  	log.info('Activating....');
+					  	return yield fastly.activateVersion(newVersion);
+						}
+					});
 
 					log.success(message);
 					log.art('superman', 'success');
@@ -367,12 +368,12 @@ function task (folders, opts) {
 				// Auto activating without prompt
 				let message = 'Version ' + newVersion + ' has been deployed and activated.';
 
-				if ( activate ) {
-					let activationResponse = co.wrap(function* (val) {
-					  log.info('Activating....');
-					  return yield fastly.activateVersion(newVersion);
-					});
-				}
+				let activationResponse = co.wrap(function* (val) {
+				  if ( activate ) {
+				  	log.info('Activating....');
+				  	return yield fastly.activateVersion(newVersion);
+					}
+				});
 
 				log.success(message);
 				log.art('superman', 'success');
