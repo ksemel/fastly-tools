@@ -2,7 +2,7 @@
 const co = require('co');
 require('array.prototype.includes');
 const path = require('path');
-const prompt = require('prompt');
+const prompt = require('prompt-promise');
 
 const loadVcl = require('../lib/loadVcl');
 const symbols = require('../lib/symbols');
@@ -324,57 +324,50 @@ function task (folders, opts) {
 		log.verbose(`Validate version ${newVersion}`);
 		let validationResponse = yield fastly.validateVersion(newVersion)
 
-		if (validationResponse.status !== 'ok') {
+		if (validationResponse.status === 'ok') {
+			log.info(`Version ${newVersion} looks ok`);
+
+			var activatePrompt = co.wrap(function * () {
+			  	if ( ! options.autoactivate ) {
+					// Prompt the user to activate
+				  	return prompt('Would you like to activate version ' + newVersion + ' now? (Y) ')
+				  		.then(function(activate){
+						  	prompt.finish();
+						  	if ( activate == 'Y' || activate == 'y' ) {
+						  		return true;
+						  	} else {
+						  		return false;
+						  	}
+						});
+				} else {
+					// Auto activating without prompt
+					return true;
+				}
+			});
+
+			var activateNow = co.wrap(function * () {
+				log.info('Activating version ' + newVersion + ' now');
+			  	return yield fastly.activateVersion(newVersion);
+			});
+
+		  	activatePrompt()
+		  		.then(function(activate){
+			  		if (activate)  {
+			  			activateNow()
+			  				.then(function(){
+					  			log.success('Version ' + newVersion + ' has been deployed and activated.');
+								log.art('superman', 'success');
+							});
+			  		} else {
+			  			log.success('Version ' + newVersion + ' has been deployed but was not activated.');
+			  		}
+		  		});
+
+		} else {
 			let error = new Error('VCL Validation Error');
 			error.type = symbols.VCL_VALIDATION_ERROR;
 			error.validation = validationResponse.msg;
 			throw error;
-
-		} else {
-			log.info(`Version ${newVersion} looks ok`);
-
-			let activate = options.autoactivate;
-
-			if ( ! options.autoactivate ) {
-				// Prompt the user to activate or wait
-				let message = 'Version ' + newVersion + ' has been deployed but was not activated.';
-				const schema = {
-					properties: {
-						activatenow: {
-							message: 'Would you like to activate version ' + newVersion + ' now?',
-							default: 'Y'
-						}
-					}
-				};
-				prompt.start();
-				prompt.get(schema, function (err, result) {
-					if ( result.activatenow == 'Y' || result.activatenow == 'y' ) {
-						activate = true;
-						message = 'Version ' + newVersion + ' has been deployed and activated.';
-					}
-
-					if ( activate ) {
-						let activationResponse = co.wrap(function* (val) {
-						  return yield fastly.activateVersion(newVersion);
-						});
-					}
-
-					log.success(message);
-					log.art('superman', 'success');
-				});
-			} else {
-				// Auto activating without prompt
-				let message = 'Version ' + newVersion + ' has been deployed and activated.';
-
-				if ( activate ) {
-					let activationResponse = co.wrap(function* (val) {
-					  return yield fastly.activateVersion(newVersion);
-					});
-				}
-
-				log.success(message);
-				log.art('superman', 'success');
-			}
 		}
 
 	});
