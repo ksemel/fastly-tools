@@ -330,8 +330,9 @@ function task (folders, opts) {
 			var activatePrompt = co.wrap(function * () {
 			  	if ( ! options.autoactivate ) {
 					// Prompt the user to activate
-				  	return yield prompt('Would you like to activate version ' + newVersion + ' now? (Y) ')
+				  	return prompt('Would you like to activate version ' + newVersion + ' now? (Y) ')
 				  		.then(function(activate){
+						  	prompt.finish();
 						  	if ( activate == 'Y' || activate == 'y' ) {
 						  		return true;
 						  	} else {
@@ -349,18 +350,16 @@ function task (folders, opts) {
 			  	return yield fastly.activateVersion(newVersion);
 			});
 
-		  	return activatePrompt()
+		  	activatePrompt()
 		  		.then(function(activate){
 			  		if (activate)  {
-			  			return activateNow()
+			  			activateNow()
 			  				.then(function(){
 					  			log.success('Version ' + newVersion + ' has been deployed and activated.');
 								log.art('superman', 'success');
-								return;
 							});
 			  		} else {
 			  			log.success('Version ' + newVersion + ' has been deployed but was not activated.');
-			  			return;
 			  		}
 		  		});
 
