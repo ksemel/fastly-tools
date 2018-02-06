@@ -324,41 +324,51 @@ function task (folders, opts) {
 		log.verbose(`Validate version ${newVersion}`);
 		let validationResponse = yield fastly.validateVersion(newVersion)
 
-		if (validationResponse.status !== 'ok') {
+		if (validationResponse.status === 'ok') {
+			log.info(`Version ${newVersion} looks ok`);
+
+			var activatePrompt = co.wrap(function * () {
+			  	if ( ! options.autoactivate ) {
+					// Prompt the user to activate
+				  	return yield prompt('Would you like to activate version ' + newVersion + ' now? (Y) ')
+				  		.then(function(activate){
+						  	if ( activate == 'Y' || activate == 'y' ) {
+						  		return true;
+						  	} else {
+						  		return false;
+						  	}
+						});
+				} else {
+					// Auto activating without prompt
+					return true;
+				}
+			});
+
+			var activateNow = co.wrap(function * () {
+				log.info('Activating version ' + newVersion + ' now');
+			  	return yield fastly.activateVersion(newVersion);
+			});
+
+		  	return activatePrompt()
+		  		.then(function(activate){
+			  		if (activate)  {
+			  			return activateNow()
+			  				.then(function(){
+					  			log.success('Version ' + newVersion + ' has been deployed and activated.');
+								log.art('superman', 'success');
+								return;
+							});
+			  		} else {
+			  			log.success('Version ' + newVersion + ' has been deployed but was not activated.');
+			  			return;
+			  		}
+		  		});
+
+		} else {
 			let error = new Error('VCL Validation Error');
 			error.type = symbols.VCL_VALIDATION_ERROR;
 			error.validation = validationResponse.msg;
 			throw error;
-
-		} else {
-			log.info(`Version ${newVersion} looks ok`);
-
-			if ( ! options.autoactivate ) {
-				var activateNow = co.wrap(function * () {
-					log.info('Activating version ' + newVersion + ' now');
-				  	yield fastly.activateVersion(newVersion);
-				})
-
-				// Prompt the user to activate or wait
-				const activatePrompt = yield prompt('Would you like to activate version ' + newVersion + ' now? (Y) ');
-
-			  	if ( activatePrompt == 'Y' || activatePrompt == 'y' ) {
-		  			activateNow().then(function(){
-						log.success('Version ' + newVersion + ' has been deployed and activated.');
-						log.art('superman', 'success');
-		  			});
-		  		} else {
-		  			log.success('Version ' + newVersion + ' has been deployed but was not activated.');
-		  		}
-
-			} else {
-				// Auto activating without prompt
-				log.info('Activating version ' + newVersion + ' now');
-				yield fastly.activateVersion(newVersion);
-
-				log.success('Version ' + newVersion + ' has been deployed and activated.');
-				log.art('superman', 'success');
-			}
 		}
 
 	});
