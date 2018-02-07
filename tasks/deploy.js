@@ -322,19 +322,18 @@ function task(folders, opts) {
     if (validationResponse.status === 'ok') {
       log.info(`Version ${newVersion} looks ok`);
 
-      const activatePrompt = co.wrap(function* () {
-        if (!options.autoactivate) {
-          // Prompt the user to activate
-          return prompt('Would you like to activate version ' + newVersion + ' now? (Y) ')
-            .then(function (activate) {
-              prompt.finish();
-              return activate === 'Y' || activate === 'y';
-            });
-        } else {
-          // Auto activating without prompt
-          return true;
-        }
-      });
+      let activatePrompt;
+      if (!options.autoactivate) {
+        // Prompt the user to activate
+        activatePrompt = await prompt('Would you like to activate version ' + newVersion + ' now? (Y) ')
+          .then(function (activate) {
+            prompt.finish();
+            return activate === 'Y' || activate === 'y';
+          });
+      } else {
+        // Auto activating without prompt
+        activatePrompt = true;
+      }
 
       log.info('Activating version ' + newVersion + ' now');
       const activateNow = await fastly.activateVersion(newVersion);
