@@ -1,5 +1,4 @@
 'use strict';
-const co = require('co');
 require('array.prototype.includes');
 const path = require('path');
 const prompt = require('prompt-promise');
