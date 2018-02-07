@@ -336,10 +336,8 @@ function task(folders, opts) {
         }
       });
 
-      const activateNow = co.wrap(function* () {
-        log.info('Activating version ' + newVersion + ' now');
-        return fastly.activateVersion(newVersion);
-      });
+      log.info('Activating version ' + newVersion + ' now');
+      const activateNow = await fastly.activateVersion(newVersion);
 
       activatePrompt()
         .then(function (activate) {
