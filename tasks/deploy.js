@@ -14,6 +14,7 @@ function task (folders, opts) {
 		service: null,
 		vars: [],
 		verbose: false,
+		useragent: 'fastly-tools',
 		autoactivate: false,
 		disableLogs: false,
 		backends: null,

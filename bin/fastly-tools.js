@@ -16,6 +16,7 @@ program
 	.option('-V --verbose', 'Verbose log output')
 	.option('-a --autoactivate', 'Automatically activate valid versions without prompting')
 	.option('-b --backends <backends>', 'Upload the backend options specified in <backends> via the api')
+	.option('-u --useragent <user agent>', 'a user agent string to identify the tool in API logs')
 	.option('-k --api-keys <keys>', 'list of alternate api keys to try should the key stored in process.env.FASTLY_API_KEY hit its rate limit', list)
 	.option('--skip-conditions <conditions>', 'list of conditions to skip deleting', list)
 	.option('--skip-responses <responses>', 'list of responses to skip deleting', list)
